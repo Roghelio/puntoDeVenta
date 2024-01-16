@@ -5,3 +5,9 @@ export class User {
   email!: string;
   pass!: string;
 }
+
+export class dataLogin {
+  //Respuesta de login
+  id!: string;
+  rolUser!: string;
+}

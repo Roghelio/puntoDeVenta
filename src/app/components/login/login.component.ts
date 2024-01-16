@@ -48,62 +48,7 @@ export class LoginComponent implements OnInit {
     }
   }
 
-  onSubmit(): void {
-    console.log('Hiciste clic en enviar');
-    console.log(this.loginForm.value);
-
-    if (this.loginForm.valid) {
-      this.auth.login(this.loginForm.value).subscribe({
-        next: (respuesta) => {
-          console.log('llego respuesta del api');
-          const rol = respuesta[0].rol;
-          let messageExito = '';
-          let messageError = '';
-
-          switch (rol) {
-            case 'Administrador':
-              messageExito = 'Bienvenido administrador';
-              this.router.navigate(['/admin']);
-              break;
-            case 'Entrenador':
-              messageExito = 'Bienvenido entrenador';
-              this.router.navigate(['/entrenador']);
-              break;
-            case 'Recepcionista':
-              messageExito = 'Bienvenido recepcionista';
-              this.router.navigate(['/recepcion']);
-              break;
-            case 'SuperAdmin':
-              messageExito = 'Bienvenido Súper Administrador';
-              this.router.navigate(['/sup-admin']);
-              break;
-            default:
-              messageError = 'Tu cuenta no tiene permisos suficientes';
-              this.toastr.error(messageError, 'Error', {
-                positionClass: 'toast-bottom-left',
-              });
-              break;
-          }
-          //si el mensaje exito esta vacio significa que un usuario con rol diferente a los indicados trato de entrar
-          if (messageExito !== '') {
-            this.toastr.success(messageExito, '', {
-              positionClass: 'toast-bottom-left',
-            });
-            console.log(respuesta);
-            // Guardamos el registro del usuario en el local storage (en formato cadena)
-            this.auth.setUserData(JSON.stringify(respuesta));
-          }
-        },
-        error: (paramError) => {
-          this.toastr.error(paramError, 'Error', {
-            positionClass: 'toast-bottom-left',
-          });
-        },
-      });
-    }
-  }
-
-
+  
 
   getErrorMessage() {
     const usernameControl = this.loginForm.get('username');
@@ -117,4 +62,42 @@ export class LoginComponent implements OnInit {
     }
     return '';
   }
+
+  onSubmit(): void {
+    console.log(this.loginForm.value);
+    if(this.loginForm.valid){
+      this.auth.loginBS(this.loginForm.value).subscribe({
+        next: (resultData) => {
+          if (resultData.rolUser === 'SuperAdmin') {
+            this.auth.loggedIn.next(true);
+            this.auth.role.next('SuperAdmin');
+            this.auth.userId.next(resultData.id);
+            this.router.navigate(['/sup-admin']);
+            console.log('eres super admin');
+          } else if (resultData.rolUser === 'Administrador') {
+            this.auth.loggedIn.next(true);
+            this.auth.role.next('Administrador');
+            this.auth.userId.next(resultData.id);
+            this.router.navigate(['/admin']);
+          } else if (resultData.rolUser === 'Recepcionista') {
+            this.auth.loggedIn.next(true);
+            this.auth.role.next('Recepcionista');
+            this.auth.userId.next(resultData.id);
+            this.router.navigate(['/recepcion']);
+            console.log('soy recepcionista');
+          } else {
+            this.toastr.error('No cuentas con permisos...', 'Error', {
+              positionClass: 'toast-bottom-left',
+            });
+          }
+        }, error: (error) => {
+            this.toastr.error(error, 'Error', {
+            positionClass: 'toast-bottom-left',
+          });
+        }
+      })
+    }
+  }
+
+
 }
